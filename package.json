@@ -1,0 +1,23 @@
+{
+  "name": "reading_reciever_visualizer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node node_modules/http-server/bin/http-server -p 3002",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Skeen/reading_reciever_visualizer.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Skeen/reading_reciever_visualizer/issues"
+  },
+  "homepage": "https://github.com/Skeen/reading_reciever_visualizer#readme",
+  "dependencies": {
+    "http-server": "^0.9.0"
+  }
+}
