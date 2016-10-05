@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Graphing</title>
+    <script src="http://www.chartjs.org/assets/Chart.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+</head>
+<body>
+<canvas id="updating-chart" width="1600" height="300"></canvas>
+
+<script>
+// ref: http://stackoverflow.com/a/1293163/2343
+// This will parse a delimited string into an array of
+// arrays. The default delimiter is the comma, but this
+// can be overriden in the second argument.
+function CSVToArray( strData, strDelimiter ){
+    // Check to see if the delimiter is defined. If not,
+    // then default to comma.
+    strDelimiter = (strDelimiter || ",");
+
+    // Create a regular expression to parse the CSV values.
+    var objPattern = new RegExp(
+            (
+             // Delimiters.
+             "(\\" + strDelimiter + "|\\r?\\n|\\r|^)" +
+
+             // Quoted fields.
+             "(?:\"([^\"]*(?:\"\"[^\"]*)*)\"|" +
+
+             // Standard fields.
+             "([^\"\\" + strDelimiter + "\\r\\n]*))"
+            ),
+            "gi"
+            );
+
+
+    // Create an array to hold our data. Give the array
+    // a default empty first row.
+    var arrData = [[]];
+
+    // Create an array to hold our individual pattern
+    // matching groups.
+    var arrMatches = null;
+
+
+    // Keep looping over the regular expression matches
+    // until we can no longer find a match.
+    while (arrMatches = objPattern.exec( strData )){
+
+        // Get the delimiter that was found.
+        var strMatchedDelimiter = arrMatches[ 1 ];
+
+        // Check to see if the given delimiter has a length
+        // (is not the start of string) and if it matches
+        // field delimiter. If id does not, then we know
+        // that this delimiter is a row delimiter.
+        if (
+                strMatchedDelimiter.length &&
+                strMatchedDelimiter !== strDelimiter
+           ){
+
+            // Since we have reached a new row of data,
+            // add an empty row to our data array.
+            arrData.push( [] );
+
+        }
+
+        var strMatchedValue;
+
+        // Now that we have our delimiter out of the way,
+        // let's check to see which kind of value we
+        // captured (quoted or unquoted).
+        if (arrMatches[ 2 ]){
+
+            // We found a quoted value. When we capture
+            // this value, unescape any double quotes.
+            strMatchedValue = arrMatches[ 2 ].replace(
+                    new RegExp( "\"\"", "g" ),
+                    "\""
+                    );
+
+        } else {
+
+            // We found a non-quoted value.
+            strMatchedValue = arrMatches[ 3 ];
+
+        }
+
+
+        // Now that we have our value string, let's add
+        // it to the data array.
+        arrData[ arrData.length - 1 ].push( strMatchedValue );
+    }
+
+    // Return the parsed data.
+    return( arrData );
+}
+
+var QueryString = function () {
+  // This function is anonymous, is executed immediately and 
+  // the return value is assigned to QueryString!
+  var query_string = {};
+  var query = window.location.search.substring(1);
+  var vars = query.split("&");
+  for (var i=0;i<vars.length;i++) {
+    var pair = vars[i].split("=");
+        // If first entry with this name
+    if (typeof query_string[pair[0]] === "undefined") {
+      query_string[pair[0]] = decodeURIComponent(pair[1]);
+        // If second entry with this name
+    } else if (typeof query_string[pair[0]] === "string") {
+      var arr = [ query_string[pair[0]],decodeURIComponent(pair[1]) ];
+      query_string[pair[0]] = arr;
+        // If third or later entry with this name
+    } else {
+      query_string[pair[0]].push(decodeURIComponent(pair[1]));
+    }
+  } 
+  return query_string;
+}();
+
+function render_chart(x_values, y_values)
+{
+    var canvas = document.getElementById('updating-chart');
+    var ctx = canvas.getContext('2d');
+    var startingData = {
+            labels: x_values,
+            datasets: [
+            {
+                fillColor: "rgba(220,220,220,0.2)",
+                strokeColor: "rgba(220,220,220,1)",
+                pointColor: "rgba(220,220,220,1)",
+                pointStrokeColor: "#fff",
+                data: y_values
+            }]
+        };
+
+    var myLiveChart = new Chart(ctx).Line(startingData);
+}
+
+var filename = QueryString.file;
+// Default to a given file
+if(filename === undefined)
+{
+    window.location = window.location + "?file=real.csv"
+}
+
+var server_url = "http://skeen.website:3001";
+var url = server_url + "/symlinks/" + filename;
+
+console.log("Reading:", filename, "(From: ", url, ")");
+// Pull our data from the server
+$.get(url, function(data, status)
+{
+    // Convert DATA into csv
+    var arr = CSVToArray(data);
+    // Throw away header
+    arr.shift();
+    // ... and last reading for some reason
+    arr.pop();
+    // Split readings into xs and ys, and parse them
+    var xs = arr.map(function(value)
+    {
+        return parseFloat(value[0]);
+    });
+    var ys = arr.map(function(value)
+    {
+        return parseFloat(value[1]);
+    });
+    // Debug dump data
+    console.log(xs);
+    console.log(ys);
+    // Render the chart
+    render_chart(xs, ys);
+});
+
+</script>
+</body>
+</html>
