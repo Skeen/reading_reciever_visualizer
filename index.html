@@ -178,32 +178,35 @@ function render_chart(x_values, y_values)
     var myLiveChart = new Chart(ctx).Line(startingData);
 }
 
+var new_url = window.location.href;
+
 var filename = QueryString.file;
 // Default to a given file
 if(filename === undefined)
-    window.location = UpdateQueryString("file", "real.csv");
+    new_url = UpdateQueryString("file", "real.csv", new_url);
 
 var average_values = QueryString.average;
 // Default to a given average
 if(average_values === undefined)
-    window.location = UpdateQueryString("average", "10");
+    new_url = UpdateQueryString("average", "10", new_url);
 
 var strip_front = QueryString.strip_front;
 // Default to a given average
 if(strip_front === undefined)
-    window.location = UpdateQueryString("strip_front", "0");
+    new_url = UpdateQueryString("strip_front", "0", new_url);
 
 var strip_back = QueryString.strip_back;
 // Default to a given average
 if(strip_back === undefined)
-    window.location = UpdateQueryString("strip_back", "0");
+    new_url = UpdateQueryString("strip_back", "0", new_url);
 
 var normalize = QueryString.normalize;
 // Default to a given average
 if(normalize === undefined)
-    window.location = UpdateQueryString("normalize", "0");
+    new_url = UpdateQueryString("normalize", "0", new_url);
 
-console.log(normalize);
+if(new_url != window.location.href)
+    window.location.href = new_url;
 
 var server_url = "http://skeen.website:3001";
 var url = server_url + "/symlinks/" + filename;
