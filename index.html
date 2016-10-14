@@ -198,6 +198,13 @@ var strip_back = QueryString.strip_back;
 if(strip_back === undefined)
     window.location = UpdateQueryString("strip_back", "0");
 
+var normalize = QueryString.normalize;
+// Default to a given average
+if(normalize === undefined)
+    window.location = UpdateQueryString("normalize", "0");
+
+console.log(normalize);
+
 var server_url = "http://skeen.website:3001";
 var url = server_url + "/symlinks/" + filename;
 
@@ -244,7 +251,7 @@ $.get(url, function(data, status)
         return value / num;
     }
     // Find the average
-    var ys = arr.map(function(value, index)
+    var ys = ys.map(function(value, index)
     {
         return get_closest(ys, index, average_values);
     });
@@ -253,6 +260,16 @@ $.get(url, function(data, status)
     {
         ys.pop();
         xs.pop();
+    }
+    if(normalize == 1)
+    {
+        var min = Math.min.apply(null, ys);
+        var max = Math.max.apply(null, ys);
+
+        ys = ys.map(function(value)
+        {
+            return (value - min) / (max - min);
+        });
     }
 
     // Debug dump data
