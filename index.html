@@ -178,15 +178,25 @@ function render_chart(x_values, y_values)
     var myLiveChart = new Chart(ctx).Line(startingData);
 }
 
-var filename = QueryString.filename;
+var filename = QueryString.file;
 // Default to a given file
 if(filename === undefined)
-    window.location = UpdateQueryString("filename", "real.csv");
+    window.location = UpdateQueryString("file", "real.csv");
 
 var average_values = QueryString.average;
 // Default to a given average
 if(average_values === undefined)
     window.location = UpdateQueryString("average", "10");
+
+var strip_front = QueryString.strip_front;
+// Default to a given average
+if(strip_front === undefined)
+    window.location = UpdateQueryString("strip_front", "0");
+
+var strip_back = QueryString.strip_back;
+// Default to a given average
+if(strip_back === undefined)
+    window.location = UpdateQueryString("strip_back", "0");
 
 var server_url = "http://skeen.website:3001";
 var url = server_url + "/symlinks/" + filename;
@@ -210,6 +220,18 @@ $.get(url, function(data, status)
     {
         return parseFloat(value[1]);
     });
+    // Remove the front values
+    for(var i=0; i<strip_front; i++)
+    {
+        ys.shift();
+        xs.shift();
+    }
+    // Remove the back values
+    for(var i=0; i<strip_back; i++)
+    {
+        ys.pop();
+        xs.pop();
+    }
     // Average this value and the next 'num'
     var get_closest = function(ys, index, num)
     {
