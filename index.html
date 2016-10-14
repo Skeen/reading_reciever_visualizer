@@ -154,6 +154,9 @@ if(filename === undefined)
 {
     window.location = window.location + "?file=real.csv"
 }
+var average_values = QueryString.average;
+if(average_values === undefined)
+    average_values = 1;
 
 var server_url = "http://skeen.website:3001";
 var url = server_url + "/symlinks/" + filename;
@@ -177,6 +180,29 @@ $.get(url, function(data, status)
     {
         return parseFloat(value[1]);
     });
+    // Average this value and the next 'num'
+    var get_closest = function(ys, index, num)
+    {
+        var value = 0;
+        for(var i=0; i<num; i++)
+        {
+            if(ys.length > index + i)
+                value += ys[index + i];
+        }
+        return value / num;
+    }
+    // Find the average
+    var ys = arr.map(function(value, index)
+    {
+        return get_closest(ys, index, average_values);
+    });
+    // Remove the last 'average_values' numbers
+    for(var i=0; i<average_values; i++)
+    {
+        ys.pop();
+        xs.pop();
+    }
+
     // Debug dump data
     console.log(xs);
     console.log(ys);
