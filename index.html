@@ -175,7 +175,7 @@ function render_chart(x_values, y_values)
             }]
         };
 
-    var myLiveChart = new Chart(ctx).Line(startingData);
+	var myLiveChart = new Chart(ctx).Line(startingData, {animation:false});
 }
 
 var new_url = window.location.href;
