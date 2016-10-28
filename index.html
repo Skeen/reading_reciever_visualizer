@@ -3,11 +3,11 @@
 <head>
     <meta charset="utf-8">
     <title>Graphing</title>
-    <script src="http://www.chartjs.org/assets/Chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.3.0/Chart.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
 </head>
 <body>
-<canvas id="updating-chart" width="1600" height="300"></canvas>
+<canvas id="updating-chart" width="screen.width" height="screen.height"></canvas>
 
 <script>
 // ref: http://stackoverflow.com/a/1293163/2343
@@ -155,10 +155,7 @@ function render_chart(x_values, y_values)
     // Only show every 10 label
     x_values = x_values.map(function(value, index)
     {
-        if(index % 10 === 0)
-            return value;
-        else
-            return "";
+	return "          " + Math.round(value);
     });
 
     var canvas = document.getElementById('updating-chart');
@@ -167,15 +164,32 @@ function render_chart(x_values, y_values)
             labels: x_values,
             datasets: [
             {
-                fillColor: "rgba(220,220,220,0.2)",
-                strokeColor: "rgba(220,220,220,1)",
-                pointColor: "rgba(220,220,220,1)",
-                pointStrokeColor: "#fff",
                 data: y_values
             }]
         };
 
-    var myLiveChart = new Chart(ctx).Line(startingData);
+    var myLiveChart = new Chart(ctx,
+	{type: 'line',
+	 data: startingData,
+ 	 options: {
+/*
+		scales: {
+		    xAxes: [{
+			type: 'linear',
+			position: 'bottom',
+			ticks: {
+			min: 0,
+			max: 50000
+}
+			}]
+		},
+*/
+		animation:false, 
+		tooltips:{ enabled: false },
+		elements: { point: { radius: 0, hitRadius: 0, hoverRadius: 0 },
+			    line: {borderColor: "rgba(220,0,0,1)", borderWidth: 1 }}
+	 }
+        });
 }
 
 var new_url = window.location.href;
@@ -188,7 +202,7 @@ if(filename === undefined)
 var average_values = QueryString.average;
 // Default to a given average
 if(average_values === undefined)
-    new_url = UpdateQueryString("average", "10", new_url);
+    new_url = UpdateQueryString("average", "1", new_url);
 
 var strip_front = QueryString.strip_front;
 // Default to a given average
@@ -204,6 +218,11 @@ var normalize = QueryString.normalize;
 // Default to a given average
 if(normalize === undefined)
     new_url = UpdateQueryString("normalize", "0", new_url);
+
+var remove_outliers = QueryString.remove_outliers;
+// Default to a given average
+if(remove_outliers === undefined)
+    new_url = UpdateQueryString("remove_outliers", "2", new_url);
 
 if(new_url != window.location.href)
     window.location.href = new_url;
@@ -275,9 +294,48 @@ $.get(url, function(data, status)
         });
     }
 
+    if(remove_outliers != 0)
+    {
+	    // Remove outliers
+	    var average = 0;
+	    for(var i=0; i<ys.length; i++)
+	    {
+		average += ys[i];
+	    }
+	    average /= ys.length;
+	    console.log("Average:", average);
+
+	    var variance = 0;
+	    for(var i=0; i<ys.length; i++)
+	    {
+		variance += (ys[i] - average) * (ys[i] - average);
+	    }
+	    variance /= ys.length;
+	    variance = Math.sqrt(variance);
+	    console.log("Variance", variance);
+
+	    var distance = remove_outliers;
+	    var upper_limit = average + (variance * distance);
+	    console.log("UpperLimit", upper_limit);
+	    var lower_limit = average - (variance * distance);
+	    console.log("LowerLimit", lower_limit);
+
+	    for(var i=0; i<ys.length; i++)
+	    {
+		var y = ys[i];
+		if((y > upper_limit) || (y < lower_limit))
+		{
+		    console.log("Dropping", y);
+		    ys.splice(i,1);
+		    xs.splice(i,1);
+		    i--;
+		}
+	    }
+    }
+
     // Debug dump data
-    console.log(xs);
-    console.log(ys);
+    //console.log(xs);
+    //console.log(ys);
     // Render the chart
     render_chart(xs, ys);
 });
