@@ -150,21 +150,15 @@ function UpdateQueryString(key, value, url) {
     }
 }
 
-function render_chart(x_values, y_values)
+function render_chart(dataset)
 {
-    // Only show every 10 label
-    x_values = x_values.map(function(value, index)
-    {
-	return "          " + Math.round(value);
-    });
-
     var canvas = document.getElementById('updating-chart');
     var ctx = canvas.getContext('2d');
     var startingData = {
-            labels: x_values,
-            datasets: [
-            {
-                data: y_values
+            datasets: [{
+		label: filename,
+                data: dataset
+		//borderColor: "rgba(0,220,0,1)"
             }]
         };
 
@@ -172,22 +166,16 @@ function render_chart(x_values, y_values)
 	{type: 'line',
 	 data: startingData,
  	 options: {
-/*
 		scales: {
 		    xAxes: [{
 			type: 'linear',
 			position: 'bottom',
-			ticks: {
-			min: 0,
-			max: 50000
-}
 			}]
 		},
-*/
 		animation:false, 
 		tooltips:{ enabled: false },
 		elements: { point: { radius: 0, hitRadius: 0, hoverRadius: 0 },
-			    line: {borderColor: "rgba(220,0,0,1)", borderWidth: 1 }}
+			    line: {borderColor: "rgba(220,0,0,1)", borderWidth: 1, tension: 0 }}
 	 }
         });
 }
@@ -222,7 +210,7 @@ if(normalize === undefined)
 var remove_outliers = QueryString.remove_outliers;
 // Default to a given average
 if(remove_outliers === undefined)
-    new_url = UpdateQueryString("remove_outliers", "2", new_url);
+    new_url = UpdateQueryString("remove_outliers", "0", new_url);
 
 if(new_url != window.location.href)
     window.location.href = new_url;
@@ -236,81 +224,83 @@ $.get(url, function(data, status)
 {
     // Convert DATA into csv
     var arr = CSVToArray(data);
+
     // Throw away header
     arr.shift();
-    // ... and last reading for some reason
-    arr.pop();
-    // Split readings into xs and ys, and parse them
-    var xs = arr.map(function(value)
-    {
-        return parseFloat(value[0]);
-    });
-    var ys = arr.map(function(value)
-    {
-        return parseFloat(value[1]);
-    });
+
     // Remove the front values
     for(var i=0; i<strip_front; i++)
     {
-        ys.shift();
-        xs.shift();
+	arr.shift();
     }
+
     // Remove the back values
     for(var i=0; i<strip_back; i++)
     {
-        ys.pop();
-        xs.pop();
+	arr.pop();
     }
+
+    // Convert to ChartJS format
+    arr = arr.map(function(value)
+    {
+	return {x: parseFloat(value[0]), y: parseFloat(value[1])};
+    });
+
     // Average this value and the next 'num'
-    var get_closest = function(ys, index, num)
+    var get_closest = function(arr, index, num)
     {
         var value = 0;
         for(var i=0; i<num; i++)
         {
-            if(ys.length > index + i)
-                value += ys[index + i];
+            if(arr.length > index + i)
+                value += arr[index + i].y;
         }
         return value / num;
     }
     // Find the average
-    var ys = ys.map(function(value, index)
+    arr = arr.map(function(value, index)
     {
-        return get_closest(ys, index, average_values);
+        value.y = get_closest(arr, index, average_values);
+	return value;
     });
     // Remove the last 'average_values' numbers
     for(var i=0; i<average_values; i++)
     {
-        ys.pop();
-        xs.pop();
+	arr.pop();
     }
+
+    // Normalize our signal
     if(normalize == 1)
     {
+	var ys = arr.map(function(value) { return value.y; });
         var min = Math.min.apply(null, ys);
         var max = Math.max.apply(null, ys);
 
-        ys = ys.map(function(value)
+        arr = arr.map(function(value)
         {
-            return (value - min) / (max - min);
+	    value.y = (value.y - min) / (max - min);
+	    return value;
         });
     }
 
+    // Remove outliers
     if(remove_outliers != 0)
     {
 	    // Remove outliers
 	    var average = 0;
-	    for(var i=0; i<ys.length; i++)
+	    for(var i=0; i<arr.length; i++)
 	    {
-		average += ys[i];
+		average += arr[i].y;
 	    }
-	    average /= ys.length;
+	    average /= arr.length;
 	    console.log("Average:", average);
 
 	    var variance = 0;
-	    for(var i=0; i<ys.length; i++)
+	    for(var i=0; i<arr.length; i++)
 	    {
-		variance += (ys[i] - average) * (ys[i] - average);
+		variance += (arr[i].y - average) * (arr[i].y - average);
 	    }
-	    variance /= ys.length;
+	    variance /= arr.length;
 	    variance = Math.sqrt(variance);
 	    console.log("Variance", variance);
 
@@ -320,24 +310,20 @@ $.get(url, function(data, status)
 	    var lower_limit = average - (variance * distance);
 	    console.log("LowerLimit", lower_limit);
 
-	    for(var i=0; i<ys.length; i++)
+	    for(var i=0; i<arr.length; i++)
 	    {
-		var y = ys[i];
+		var y = arr[i].y;
 		if((y > upper_limit) || (y < lower_limit))
 		{
 		    console.log("Dropping", y);
-		    ys.splice(i,1);
-		    xs.splice(i,1);
+		    arr.splice(i,1);
 		    i--;
 		}
 	    }
     }
 
-    // Debug dump data
-    //console.log(xs);
-    //console.log(ys);
     // Render the chart
-    render_chart(xs, ys);
+    render_chart(arr);
 });
 
 </script>
