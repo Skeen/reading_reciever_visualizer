@@ -152,6 +152,15 @@ function UpdateQueryString(key, value, url) {
 
 function render_chart(dataset)
 {
+    var last = dataset[0].x;
+    var x_offsets = dataset.map(function(value)
+    {
+	var result = {x: value.x, y: (value.x - last)};
+        last = value.x;
+        return result;
+    });
+    //console.log(x_offsets);
+
     var canvas = document.getElementById('updating-chart');
     var ctx = canvas.getContext('2d');
     var startingData = {
@@ -159,7 +168,12 @@ function render_chart(dataset)
 		label: filename,
                 data: dataset
 		//borderColor: "rgba(0,220,0,1)"
-            }]
+            },
+	    {
+		label: 'x_offests:' + filename,
+  		data: x_offsets,
+		borderColor: "rgba(0,220,0,1)"
+ 	    }]
         };
 
     var myLiveChart = new Chart(ctx,
@@ -227,6 +241,8 @@ $.get(url, function(data, status)
 
     // Throw away header
     arr.shift();
+    // Last reading is always empty (NaN)
+    arr.pop();
 
     // Remove the front values
     for(var i=0; i<strip_front; i++)
@@ -246,41 +262,18 @@ $.get(url, function(data, status)
 	return {x: parseFloat(value[0]), y: parseFloat(value[1])};
     });
 
-    // Average this value and the next 'num'
-    var get_closest = function(arr, index, num)
+    var sorted = arr.reduce(function(a, b)
     {
-        var value = 0;
-        for(var i=0; i<num; i++)
-        {
-            if(arr.length > index + i)
-                value += arr[index + i].y;
-        }
-        return value / num;
-    }
-    // Find the average
-    arr = arr.map(function(value, index)
-    {
-        value.y = get_closest(arr, index, average_values);
-	return value;
-    });
-    // Remove the last 'average_values' numbers
-    for(var i=0; i<average_values; i++)
-    {
-	arr.pop();
-    }
+        if(a == false || a > b.x)
+            return false;
+        else
+ 	    return b.x;
+    }, arr[0].x) !== false;
 
-    // Normalize our signal
-    if(normalize == 1)
+    console.log("Sorted:", sorted);
+    if(sorted === false)
     {
-	var ys = arr.map(function(value) { return value.y; });
-        var min = Math.min.apply(null, ys);
-        var max = Math.max.apply(null, ys);
-
-        arr = arr.map(function(value)
-        {
-	    value.y = (value.y - min) / (max - min);
-	    return value;
-        });
+    	arr.sort(function(a,b) { return a.x - b.x; });
     }
 
     // Remove outliers
@@ -320,6 +313,43 @@ $.get(url, function(data, status)
 		    i--;
 		}
 	    }
+    }
+
+    // Average this value and the next 'num'
+    var get_closest = function(arr, index, num)
+    {
+        var value = 0;
+        for(var i=0; i<num; i++)
+        {
+            if(arr.length > index + i)
+                value += arr[index + i].y;
+        }
+        return value / num;
+    }
+    // Find the average
+    arr = arr.map(function(value, index)
+    {
+        value.y = get_closest(arr, index, average_values);
+	return value;
+    });
+    // Remove the last 'average_values' numbers
+    for(var i=0; i<average_values; i++)
+    {
+	arr.pop();
+    }
+
+    // Normalize our signal
+    if(normalize == 1)
+    {
+	var ys = arr.map(function(value) { return value.y; });
+        var min = Math.min.apply(null, ys);
+        var max = Math.max.apply(null, ys);
+
+        arr = arr.map(function(value)
+        {
+	    value.y = (value.y - min) / (max - min);
+	    return value;
+        });
     }
 
     // Render the chart
