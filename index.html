@@ -359,28 +359,28 @@ $.get(url, function(data, status)
 	    }
     }
 
-    // Average this value and the next 'num'
+    // Average this value and the surrounding 'num'
     var get_closest = function(arr, index, num)
     {
+	var num_used = 0;
         var value = 0;
         for(var i=0; i<num; i++)
         {
-            if(arr.length > index + i)
-                value += arr[index + i].y;
+	    var idx = index - num/2 + i;
+   	    if(idx < arr.length && idx > 0)
+  	    {
+                value += arr[idx].y;
+		num_used++;
+	    }
         }
-        return value / num;
+        return value / num_used;
     }
     // Find the average
-    arr = arr.map(function(value, index)
+    var arr = arr.map(function(value, index)
     {
-        value.y = get_closest(arr, index, average_values);
-	return value;
+	var magic = {x: value.x, y: get_closest(arr, index, average_values)};
+	return magic;
     });
-    // Remove the last 'average_values' numbers
-    for(var i=0; i<average_values; i++)
-    {
-	arr.pop();
-    }
 
     // Normalize our signal
     if(normalize == 1)
