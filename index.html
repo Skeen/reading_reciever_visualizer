@@ -150,8 +150,41 @@ function UpdateQueryString(key, value, url) {
     }
 }
 
+function download_file(dataset)
+{
+	var saveData = (function () {
+	    var a = document.createElement("a");
+	    document.body.appendChild(a);
+	    a.style = "display: none";
+	    return function (data, fileName) {
+		var blob = new Blob([data], {type: "octet/stream"});
+		var url = window.URL.createObjectURL(blob);
+		a.href = url;
+		a.download = fileName;
+		a.click();
+		window.URL.revokeObjectURL(url);
+		document.body.removeChild(a);
+	    };
+	}());
+
+	var data = dataset.reduce(function(accum, value)
+	{
+	    return accum + '\n' + value.x + ", " + value.y;
+	}, "Time, Value");
+
+	saveData(data, filename);
+
+	console.log("Downloading");
+}
+
 function render_chart(dataset)
 {
+    // If we're asked to download, do so
+    if(download_csv == 1)
+    {
+	download_file(dataset);
+    }
+
     var last = dataset[0].x;
     var x_offsets = dataset.map(function(value)
     {
@@ -226,6 +259,11 @@ var remove_outliers = QueryString.remove_outliers;
 if(remove_outliers === undefined)
     new_url = UpdateQueryString("remove_outliers", "0", new_url);
 
+var download_csv = QueryString.download_csv;
+// Default to a given average
+if(remove_outliers === undefined)
+    new_url = UpdateQueryString("download_csv", "0", new_url);
+
 if(new_url != window.location.href)
     window.location.href = new_url;
 
@@ -261,6 +299,12 @@ $.get(url, function(data, status)
     {
 	return {x: parseFloat(value[0]), y: parseFloat(value[1])};
     });
+
+    if(arr.length == 0)
+    {
+	console.warn("All readings removed!");
+	return;
+    }
 
     var sorted = arr.reduce(function(a, b)
     {
