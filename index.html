@@ -366,7 +366,7 @@ $.get(url, function(data, status)
         var value = 0;
         for(var i=0; i<num; i++)
         {
-	    var idx = index - num/2 + i;
+	    var idx = index - Math.floor(num/2) + i;
    	    if(idx < arr.length && idx > 0)
   	    {
                 value += arr[idx].y;
@@ -375,7 +375,7 @@ $.get(url, function(data, status)
         }
         return value / num_used;
     }
-    // Find the average
+    // Calculate averaged values
     var arr = arr.map(function(value, index)
     {
 	var magic = {x: value.x, y: get_closest(arr, index, average_values)};
