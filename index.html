@@ -367,7 +367,7 @@ $.get(url, function(data, status)
         for(var i=0; i<num; i++)
         {
 	    var idx = index - Math.floor(num/2) + i;
-   	    if(idx < arr.length && idx > 0)
+   	    if(idx < arr.length && idx >= 0)
   	    {
                 value += arr[idx].y;
 		num_used++;
@@ -375,12 +375,14 @@ $.get(url, function(data, status)
         }
         return value / num_used;
     }
+
     // Calculate averaged values
     var arr = arr.map(function(value, index)
     {
 	var magic = {x: value.x, y: get_closest(arr, index, average_values)};
 	return magic;
     });
+
 
     // Normalize our signal
     if(normalize == 1)
@@ -391,8 +393,8 @@ $.get(url, function(data, status)
 
         arr = arr.map(function(value)
         {
-	    value.y = (value.y - min) / (max - min);
-	    return value;
+	    var magic = {x: value.x, y: (value.y - min) / (max - min)};
+	    return magic;
         });
     }
 
