@@ -247,6 +247,7 @@ var normalize       = updateUrlLookup("normalize", "0");
 var remove_outliers = updateUrlLookup("remove_outliers", "0");
 var download_csv    = updateUrlLookup("download_csv", "0");
 var offset_hidden   = updateUrlLookup("offset_hidden", "0");
+var absolute  	    = updateUrlLookup("abs", "0");
 
 if(new_url != window.location.href)
     window.location.href = new_url;
@@ -341,6 +342,14 @@ $.get(url, function(data, status)
 		    i--;
 		}
 	    }
+    }
+
+    if(absolute == 1)
+    {
+	    arr = arr.map(function(value)
+	    {
+		return {x: value.x, y: Math.abs(value.y)};
+	    });
     }
 
     // Average this value and the surrounding 'num'
