@@ -228,47 +228,25 @@ function render_chart(dataset)
         });
 }
 
+var updateUrlLookup = function(argument_name, argument_default)
+{
+    var argument = QueryString[argument_name];
+    // Default to a given value
+    if(argument === undefined)
+        new_url = UpdateQueryString(argument_name, argument_default, new_url);
+    return argument;
+}
+
 var new_url = window.location.href;
 
-var filename = QueryString.file;
-// Default to a given file
-if(filename === undefined)
-    new_url = UpdateQueryString("file", "real.csv", new_url);
-
-var average_values = QueryString.average;
-// Default to a given average
-if(average_values === undefined)
-    new_url = UpdateQueryString("average", "1", new_url);
-
-var strip_front = QueryString.strip_front;
-// Default to a given average
-if(strip_front === undefined)
-    new_url = UpdateQueryString("strip_front", "0", new_url);
-
-var strip_back = QueryString.strip_back;
-// Default to a given average
-if(strip_back === undefined)
-    new_url = UpdateQueryString("strip_back", "0", new_url);
-
-var normalize = QueryString.normalize;
-// Default to a given average
-if(normalize === undefined)
-    new_url = UpdateQueryString("normalize", "0", new_url);
-
-var remove_outliers = QueryString.remove_outliers;
-// Default to a given average
-if(remove_outliers === undefined)
-    new_url = UpdateQueryString("remove_outliers", "0", new_url);
-
-var download_csv = QueryString.download_csv;
-// Default to a given average
-if(download_csv === undefined)
-    new_url = UpdateQueryString("download_csv", "0", new_url);
-
-var offset_hidden = QueryString.offset_hidden;
-// Default to a given average
-if(offset_hidden === undefined)
-    new_url = UpdateQueryString("offset_hidden", "0", new_url);
+var filename        = updateUrlLookup("file", "real.csv");
+var average_values  = updateUrlLookup("average", "1");
+var strip_front     = updateUrlLookup("strip_front", "0");
+var strip_back      = updateUrlLookup("strip_back", "0");
+var normalize       = updateUrlLookup("normalize", "0");
+var remove_outliers = updateUrlLookup("remove_outliers", "0");
+var download_csv    = updateUrlLookup("download_csv", "0");
+var offset_hidden   = updateUrlLookup("offset_hidden", "0");
 
 if(new_url != window.location.href)
     window.location.href = new_url;
