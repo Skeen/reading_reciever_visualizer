@@ -205,7 +205,8 @@ function render_chart(dataset)
 	    {
 		label: 'x_offests:' + filename,
   		data: x_offsets,
-		borderColor: "rgba(0,220,0,1)"
+		borderColor: "rgba(0,220,0,1)",
+		hidden: (offset_hidden == 1)
  	    }]
         };
 
@@ -261,8 +262,13 @@ if(remove_outliers === undefined)
 
 var download_csv = QueryString.download_csv;
 // Default to a given average
-if(remove_outliers === undefined)
+if(download_csv === undefined)
     new_url = UpdateQueryString("download_csv", "0", new_url);
+
+var offset_hidden = QueryString.offset_hidden;
+// Default to a given average
+if(offset_hidden === undefined)
+    new_url = UpdateQueryString("offset_hidden", "0", new_url);
 
 if(new_url != window.location.href)
     window.location.href = new_url;
